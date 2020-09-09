@@ -47,7 +47,7 @@ input:
 	return quality
 }
 
-var escapeSequences_2022JP = [][]byte{
+var escapeSequences2022JP = [][]byte{
 	{0x24, 0x28, 0x43}, // KS X 1001:1992
 	{0x24, 0x28, 0x44}, // JIS X 212-1990
 	{0x24, 0x40},       // JIS C 6226-1978
@@ -62,11 +62,11 @@ var escapeSequences_2022JP = [][]byte{
 	{0x2e, 0x46},       // ISO 8859-7
 }
 
-var escapeSequences_2022KR = [][]byte{
+var escapeSequences2022KR = [][]byte{
 	{0x24, 0x29, 0x43},
 }
 
-var escapeSequences_2022CN = [][]byte{
+var escapeSequences2022CN = [][]byte{
 	{0x24, 0x29, 0x41}, // GB 2312-80
 	{0x24, 0x29, 0x47}, // CNS 11643-1992 Plane 1
 	{0x24, 0x2A, 0x48}, // CNS 11643-1992 Plane 2
@@ -80,23 +80,23 @@ var escapeSequences_2022CN = [][]byte{
 	{0x4f},             // SS3
 }
 
-func newRecognizer_2022JP() *recognizer2022 {
+func newRecognizer2022JP() *recognizer2022 {
 	return &recognizer2022{
 		"ISO-2022-JP",
-		escapeSequences_2022JP,
+		escapeSequences2022JP,
 	}
 }
 
-func newRecognizer_2022KR() *recognizer2022 {
+func newRecognizer2022KR() *recognizer2022 {
 	return &recognizer2022{
 		"ISO-2022-KR",
-		escapeSequences_2022KR,
+		escapeSequences2022KR,
 	}
 }
 
-func newRecognizer_2022CN() *recognizer2022 {
+func newRecognizer2022CN() *recognizer2022 {
 	return &recognizer2022{
 		"ISO-2022-CN",
-		escapeSequences_2022CN,
+		escapeSequences2022CN,
 	}
 }

@@ -49,9 +49,8 @@ func (r *recognizerMultiByte) matchConfidence(input *recognizerInput) int {
 	if doubleByteCharCount <= 10 && badCharCount == 0 {
 		if doubleByteCharCount == 0 && totalCharCount < 10 {
 			return 0
-		} else {
-			return 10
 		}
+		return 10
 	}
 
 	if doubleByteCharCount < 20*badCharCount {
@@ -92,15 +91,17 @@ func binarySearch(l []uint16, c uint16) bool {
 	return false
 }
 
-var eobError = errors.New("End of input buffer")
-var badCharError = errors.New("Decode a bad char")
+// ErrorEOB is error message when end of input buffer
+var ErrorEOB = errors.New("End of input buffer")
 
-type charDecoder_sjis struct {
-}
+// ErrorBadChar is error message when decode a bad char
+var ErrorBadChar = errors.New("Decode a bad char")
 
-func (charDecoder_sjis) DecodeOneChar(input []byte) (c uint16, remain []byte, err error) {
+type charDecoderSjis struct{}
+
+func (charDecoderSjis) DecodeOneChar(input []byte) (c uint16, remain []byte, err error) {
 	if len(input) == 0 {
-		return 0, nil, eobError
+		return 0, nil, ErrorEOB
 	}
 	first := input[0]
 	c = uint16(first)
@@ -109,19 +110,19 @@ func (charDecoder_sjis) DecodeOneChar(input []byte) (c uint16, remain []byte, er
 		return
 	}
 	if len(remain) == 0 {
-		return c, remain, badCharError
+		return c, remain, ErrorBadChar
 	}
 	second := remain[0]
 	remain = remain[1:]
 	c = c<<8 | uint16(second)
 	if (second >= 0x40 && second <= 0x7F) || (second >= 0x80 && second <= 0xFE) {
 	} else {
-		err = badCharError
+		err = ErrorBadChar
 	}
 	return
 }
 
-var commonChars_sjis = []uint16{
+var commonCharsSjis = []uint16{
 	0x8140, 0x8141, 0x8142, 0x8145, 0x815b, 0x8169, 0x816a, 0x8175, 0x8176, 0x82a0,
 	0x82a2, 0x82a4, 0x82a9, 0x82aa, 0x82ab, 0x82ad, 0x82af, 0x82b1, 0x82b3, 0x82b5,
 	0x82b7, 0x82bd, 0x82be, 0x82c1, 0x82c4, 0x82c5, 0x82c6, 0x82c8, 0x82c9, 0x82cc,
@@ -130,21 +131,20 @@ var commonChars_sjis = []uint16{
 	0x838a, 0x838b, 0x838d, 0x8393, 0x8e96, 0x93fa, 0x95aa,
 }
 
-func newRecognizer_sjis() *recognizerMultiByte {
+func newRecognizersjis() *recognizerMultiByte {
 	return &recognizerMultiByte{
 		"Shift_JIS",
 		"ja",
-		charDecoder_sjis{},
-		commonChars_sjis,
+		charDecoderSjis{},
+		commonCharsSjis,
 	}
 }
 
-type charDecoder_euc struct {
-}
+type charDecoderEuc struct{}
 
-func (charDecoder_euc) DecodeOneChar(input []byte) (c uint16, remain []byte, err error) {
+func (charDecoderEuc) DecodeOneChar(input []byte) (c uint16, remain []byte, err error) {
 	if len(input) == 0 {
-		return 0, nil, eobError
+		return 0, nil, ErrorEOB
 	}
 	first := input[0]
 	remain = input[1:]
@@ -153,38 +153,38 @@ func (charDecoder_euc) DecodeOneChar(input []byte) (c uint16, remain []byte, err
 		return uint16(first), remain, nil
 	}
 	if len(remain) == 0 {
-		return 0, nil, eobError
+		return 0, nil, ErrorEOB
 	}
 	second := remain[0]
 	remain = remain[1:]
 	c = c<<8 | uint16(second)
 	if first >= 0xA1 && first <= 0xFE {
 		if second < 0xA1 {
-			err = badCharError
+			err = ErrorBadChar
 		}
 		return
 	}
 	if first == 0x8E {
 		if second < 0xA1 {
-			err = badCharError
+			err = ErrorBadChar
 		}
 		return
 	}
 	if first == 0x8F {
 		if len(remain) == 0 {
-			return 0, nil, eobError
+			return 0, nil, ErrorEOB
 		}
 		third := remain[0]
 		remain = remain[1:]
 		c = c<<0 | uint16(third)
 		if third < 0xa1 {
-			err = badCharError
+			err = ErrorBadChar
 		}
 	}
 	return
 }
 
-var commonChars_euc_jp = []uint16{
+var commonCharsEucJp = []uint16{
 	0xa1a1, 0xa1a2, 0xa1a3, 0xa1a6, 0xa1bc, 0xa1ca, 0xa1cb, 0xa1d6, 0xa1d7, 0xa4a2,
 	0xa4a4, 0xa4a6, 0xa4a8, 0xa4aa, 0xa4ab, 0xa4ac, 0xa4ad, 0xa4af, 0xa4b1, 0xa4b3,
 	0xa4b5, 0xa4b7, 0xa4b9, 0xa4bb, 0xa4bd, 0xa4bf, 0xa4c0, 0xa4c1, 0xa4c3, 0xa4c4,
@@ -197,7 +197,7 @@ var commonChars_euc_jp = []uint16{
 	0xbbc8, 0xbef0, 0xbfb7, 0xc4ea, 0xc6fc, 0xc7bd, 0xcab8, 0xcaf3, 0xcbdc, 0xcdd1,
 }
 
-var commonChars_euc_kr = []uint16{
+var commonCharsEucKr = []uint16{
 	0xb0a1, 0xb0b3, 0xb0c5, 0xb0cd, 0xb0d4, 0xb0e6, 0xb0ed, 0xb0f8, 0xb0fa, 0xb0fc,
 	0xb1b8, 0xb1b9, 0xb1c7, 0xb1d7, 0xb1e2, 0xb3aa, 0xb3bb, 0xb4c2, 0xb4cf, 0xb4d9,
 	0xb4eb, 0xb5a5, 0xb5b5, 0xb5bf, 0xb5c7, 0xb5e9, 0xb6f3, 0xb7af, 0xb7c2, 0xb7ce,
@@ -210,30 +210,29 @@ var commonChars_euc_kr = []uint16{
 	0xc1f8, 0xc4a1, 0xc5cd, 0xc6ae, 0xc7cf, 0xc7d1, 0xc7d2, 0xc7d8, 0xc7e5, 0xc8ad,
 }
 
-func newRecognizer_euc_jp() *recognizerMultiByte {
+func newRecognizereucJp() *recognizerMultiByte {
 	return &recognizerMultiByte{
 		"EUC-JP",
 		"ja",
-		charDecoder_euc{},
-		commonChars_euc_jp,
+		charDecoderEuc{},
+		commonCharsEucJp,
 	}
 }
 
-func newRecognizer_euc_kr() *recognizerMultiByte {
+func newRecognizereucKr() *recognizerMultiByte {
 	return &recognizerMultiByte{
 		"EUC-KR",
 		"ko",
-		charDecoder_euc{},
-		commonChars_euc_kr,
+		charDecoderEuc{},
+		commonCharsEucKr,
 	}
 }
 
-type charDecoder_big5 struct {
-}
+type charDecoderBig5 struct{}
 
-func (charDecoder_big5) DecodeOneChar(input []byte) (c uint16, remain []byte, err error) {
+func (charDecoderBig5) DecodeOneChar(input []byte) (c uint16, remain []byte, err error) {
 	if len(input) == 0 {
-		return 0, nil, eobError
+		return 0, nil, ErrorEOB
 	}
 	first := input[0]
 	remain = input[1:]
@@ -242,18 +241,18 @@ func (charDecoder_big5) DecodeOneChar(input []byte) (c uint16, remain []byte, er
 		return
 	}
 	if len(remain) == 0 {
-		return c, nil, eobError
+		return c, nil, ErrorEOB
 	}
 	second := remain[0]
 	remain = remain[1:]
 	c = c<<8 | uint16(second)
 	if second < 0x40 || second == 0x7F || second == 0xFF {
-		err = badCharError
+		err = ErrorBadChar
 	}
 	return
 }
 
-var commonChars_big5 = []uint16{
+var commonCharsBig5 = []uint16{
 	0xa140, 0xa141, 0xa142, 0xa143, 0xa147, 0xa149, 0xa175, 0xa176, 0xa440, 0xa446,
 	0xa447, 0xa448, 0xa451, 0xa454, 0xa457, 0xa464, 0xa46a, 0xa46c, 0xa477, 0xa4a3,
 	0xa4a4, 0xa4a7, 0xa4c1, 0xa4ce, 0xa4d1, 0xa4df, 0xa4e8, 0xa4fd, 0xa540, 0xa548,
@@ -266,21 +265,21 @@ var commonChars_big5 = []uint16{
 	0xbba1, 0xbdd1, 0xc2c4, 0xc3b9, 0xc440, 0xc45f,
 }
 
-func newRecognizer_big5() *recognizerMultiByte {
+func newRecognizerbig5() *recognizerMultiByte {
 	return &recognizerMultiByte{
 		"Big5",
 		"zh",
-		charDecoder_big5{},
-		commonChars_big5,
+		charDecoderBig5{},
+		commonCharsBig5,
 	}
 }
 
-type charDecoder_gb_18030 struct {
+type charDecoderGB18030 struct {
 }
 
-func (charDecoder_gb_18030) DecodeOneChar(input []byte) (c uint16, remain []byte, err error) {
+func (charDecoderGB18030) DecodeOneChar(input []byte) (c uint16, remain []byte, err error) {
 	if len(input) == 0 {
-		return 0, nil, eobError
+		return 0, nil, ErrorEOB
 	}
 	first := input[0]
 	remain = input[1:]
@@ -289,7 +288,7 @@ func (charDecoder_gb_18030) DecodeOneChar(input []byte) (c uint16, remain []byte
 		return
 	}
 	if len(remain) == 0 {
-		return 0, nil, eobError
+		return 0, nil, ErrorEOB
 	}
 	second := remain[0]
 	remain = remain[1:]
@@ -301,13 +300,13 @@ func (charDecoder_gb_18030) DecodeOneChar(input []byte) (c uint16, remain []byte
 
 		if second >= 0x30 && second <= 0x39 {
 			if len(remain) == 0 {
-				return 0, nil, eobError
+				return 0, nil, ErrorEOB
 			}
 			third := remain[0]
 			remain = remain[1:]
 			if third >= 0x81 && third <= 0xFE {
 				if len(remain) == 0 {
-					return 0, nil, eobError
+					return 0, nil, ErrorEOB
 				}
 				fourth := remain[0]
 				remain = remain[1:]
@@ -317,12 +316,12 @@ func (charDecoder_gb_18030) DecodeOneChar(input []byte) (c uint16, remain []byte
 				}
 			}
 		}
-		err = badCharError
+		err = ErrorBadChar
 	}
 	return
 }
 
-var commonChars_gb_18030 = []uint16{
+var commonCharsGB18030 = []uint16{
 	0xa1a1, 0xa1a2, 0xa1a3, 0xa1a4, 0xa1b0, 0xa1b1, 0xa1f1, 0xa1f3, 0xa3a1, 0xa3ac,
 	0xa3ba, 0xb1a8, 0xb1b8, 0xb1be, 0xb2bb, 0xb3c9, 0xb3f6, 0xb4f3, 0xb5bd, 0xb5c4,
 	0xb5e3, 0xb6af, 0xb6d4, 0xb6e0, 0xb7a2, 0xb7a8, 0xb7bd, 0xb7d6, 0xb7dd, 0xb8b4,
@@ -335,11 +334,11 @@ var commonChars_gb_18030 = []uint16{
 	0xd2b5, 0xd2bb, 0xd2d4, 0xd3c3, 0xd3d0, 0xd3fd, 0xd4c2, 0xd4da, 0xd5e2, 0xd6d0,
 }
 
-func newRecognizer_gb_18030() *recognizerMultiByte {
+func newRecognizerGB18030() *recognizerMultiByte {
 	return &recognizerMultiByte{
 		"GB18030",
 		"zh",
-		charDecoder_gb_18030{},
-		commonChars_gb_18030,
+		charDecoderGB18030{},
+		commonCharsGB18030,
 	}
 }
