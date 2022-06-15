@@ -1,3 +1,3 @@
-module github.com/night-codes/chardet
+module github.com/PublicareDevelopers/chardet
 
-go 1.11
+go 1.18
